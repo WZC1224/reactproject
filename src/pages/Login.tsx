@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Form, Input, Button, Card, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import styles from '../styles/pages/Login.module.css';
+import { login } from '../api';
 
 interface LoginForm {
   username: string;
@@ -12,24 +13,15 @@ interface LoginForm {
 const Login: React.FC = () => {
   const navigate = useNavigate();
 
-  const onFinish = (values: LoginForm) => {
-    // 这里模拟登录验证，实际项目中应该调用后端API
-    const registeredUser = localStorage.getItem('registeredUser');
-    const isAdmin = values.username === 'admin' && values.password === 'admin';
-    const isRegisteredUser = registeredUser && JSON.parse(registeredUser).username === values.username && 
-                           JSON.parse(registeredUser).password === values.password;
-
-    if (isAdmin || isRegisteredUser) {
-      localStorage.setItem('token', 'demo-token');
-      localStorage.setItem('user', JSON.stringify({
-        name: isAdmin ? 'Admin' : values.username,
-        role: isAdmin ? 'admin' : 'user',
-        avatar: 'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png'
-      }));
+  const onFinish = async (values: LoginForm) => {
+    try {
+      const { data } = await login(values);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       message.success('登录成功');
       navigate('/dashboard');
-    } else {
-      message.error('用户名或密码错误');
+    } catch (error) {
+      message.error('登录失败，请检查用户名和密码');
     }
   };
 

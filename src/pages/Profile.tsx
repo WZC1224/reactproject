@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Avatar, Form, Input, Button, message } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import styles from '../styles/pages/Profile.module.css';
+import { getProfile, updateProfile } from '../api';
 
 interface UserInfo {
   name: string;
@@ -12,23 +13,35 @@ interface UserInfo {
 const Profile: React.FC = () => {
   const [form] = Form.useForm();
   const [user, setUser] = useState<UserInfo | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      const userData = JSON.parse(userStr);
-      setUser(userData);
-      form.setFieldsValue(userData);
-    }
+    const fetchProfile = async () => {
+      try {
+        const { data } = await getProfile();
+        setUser(data);
+        form.setFieldsValue(data);
+      } catch (error) {
+        message.error('获取个人信息失败');
+      }
+    };
+    fetchProfile();
   }, [form]);
 
-  const handleSubmit = (values: UserInfo) => {
-    const updatedUser = { ...values };
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    message.success('个人信息更新成功');
-  };
-
+  const handleSubmit = async (values: UserInfo) => {
+    setLoading(true);
+    try {
+      await updateProfile(values);
+      setUser(values);
+      localStorage.setItem('user', JSON.stringify(values));
+      message.success('个人信息更新成功');
+    } catch (error) {
+      message.error('更新失败');
+    } finally {
+      setLoading(false);
+    }
+  ;
+  }
   if (!user) {
     return null;
   }
@@ -81,6 +94,7 @@ const Profile: React.FC = () => {
       </Card>
     </div>
   );
+  
 };
 
 export default Profile;
